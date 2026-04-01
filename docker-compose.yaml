@@ -55,19 +55,18 @@ services:
 
     # Internal Services
     workflows:
-        container_name: openstatus-workflows
-        build:
-            context: .
-            dockerfile: apps/workflows/Dockerfile
-        image: openstatus/workflows:latest
-        networks:
-            - openstatus
-        ports:
-            - "3000:3000"
-        volumes:
-            - workflows-data:/app/data
-        env_file:
-            - .env
+      container_name: openstatus-workflows
+      build:
+        context: .
+        dockerfile: apps/workflows/Dockerfile
+      image: openstatus/workflows:latest
+      networks:
+        - openstatus
+      volumes:
+        - workflows-data:/app/data
+      env_file:
+        - .env
+
         environment:
             - DATABASE_URL=http://libsql:8080
             - PORT=3000
