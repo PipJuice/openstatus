@@ -11,8 +11,12 @@ const handler = (req: NextRequest) =>
   fetchRequestHandler({
     endpoint: "/api/trpc/edge",
     router: edgeRouter,
-    req: req,
-    createContext: () => createTRPCContext({ req, auth }),
+    req,
+    createContext: () =>
+      createTRPCContext({
+        req,
+        auth: () => auth(req),
+      }),
     onError: ({ error }) => {
       console.log("Error in tRPC handler (edge)");
       console.error(error);
