@@ -171,14 +171,17 @@ export default auth(async (req) => {
   if (_page.customDomain && host !== `${_page.slug}.stpg.dev`) {
     const pathnames = url.pathname.split("/");
     const requestHost = host ?? url.host;
-    const subdomain =
-      requestHost === _page.customDomain
-        ? null
-        : getValidSubdomain(requestHost);
-    if (pathnames.length > 2 && !subdomain) {
-      const pathname = pathnames.slice(2).join("/");
+    const isExactCustomDomain = requestHost === _page.customDomain;
+    const subdomain = isExactCustomDomain
+      ? null
+      : getValidSubdomain(requestHost);
+    if (isExactCustomDomain) {
+      const internalPath = route.rewritePath.replace(
+        `/${route.prefix}`,
+        `/${_page.slug}`,
+      );
       const rewriteUrl = req.nextUrl.clone();
-      rewriteUrl.pathname = `/${_page.slug}/${pathname}`;
+      rewriteUrl.pathname = internalPath;
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
