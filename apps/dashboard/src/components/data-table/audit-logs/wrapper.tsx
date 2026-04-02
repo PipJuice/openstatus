@@ -9,11 +9,14 @@ import {
 import { DataTable } from "@/components/ui/data-table/data-table";
 import { DataTablePaginationSimple } from "@/components/ui/data-table/data-table-pagination";
 import { useTRPC } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@openstatus/api";
 import { Skeleton } from "@openstatus/ui/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 
 import { useMemo } from "react";
 import { getColumns } from "./columns";
+
+type AuditLog = RouterOutputs["tinybird"]["auditLog"]["data"][number];
 
 export function AuditLogsWrapper({
   monitorId,
@@ -58,7 +61,7 @@ export function AuditLogsWrapper({
 
   return (
     <BlockWrapper>
-      <DataTable
+      <DataTable<AuditLog, unknown>
         columns={columns}
         data={auditLogs.data}
         paginationComponent={DataTablePaginationSimple}
