@@ -17,5 +17,5 @@ export const GoogleProvider = Google({
 
 export const ResendProvider = Resend({
   apiKey: process.env.RESEND_API_KEY,
-  from: "PipJuice Status <status@pipjuice.io>",
+  from: "PipJuice Status <pipjuice@nebaura.studio>",
 });
