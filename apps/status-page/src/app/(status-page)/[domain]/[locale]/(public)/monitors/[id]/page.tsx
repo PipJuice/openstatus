@@ -52,6 +52,11 @@ import { useQueryStates } from "nuqs";
 import { useMemo } from "react";
 import { searchParamsParsers } from "./search-params";
 
+type RegionLatencyPoint = {
+  timestamp: string;
+  [region: string]: number | string | null;
+};
+
 export default function Page() {
   const t = useExtracted();
   const [{ tab }, setSearchParams] = useQueryStates(searchParamsParsers);
@@ -88,7 +93,7 @@ export default function Page() {
       }));
   }, [monitor?.data.latency?.data]);
 
-  const regionLatencyData = useMemo(() => {
+  const regionLatencyData = useMemo<RegionLatencyPoint[]>(() => {
     if (!monitor?.data.regions?.data) return [];
 
     const grouped = monitor.data.regions.data
@@ -109,10 +114,7 @@ export default function Page() {
           acc[timestamp][item.region] = item.p75Latency;
           return acc;
         },
-        {} as Record<
-          string,
-          { timestamp: string; [region: string]: number | string | null }
-        >,
+        {} as Record<string, RegionLatencyPoint>,
       );
 
     return Object.values(grouped);
