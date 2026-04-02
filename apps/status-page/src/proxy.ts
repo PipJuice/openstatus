@@ -175,14 +175,27 @@ export default auth(async (req) => {
     const pathnames = url.pathname.split("/");
     const requestHost = host ?? url.host;
     const isExactCustomDomain = requestHost === _page.customDomain;
+    const internalPagePrefix = `/${_page.slug}`;
+    const isInternalPagePath =
+      url.pathname === internalPagePrefix ||
+      url.pathname.startsWith(`${internalPagePrefix}/`);
+
+    if (isInternalPagePath) {
+      return response;
+    }
+
     const subdomain = isExactCustomDomain
       ? null
       : getValidSubdomain(requestHost);
+
     if (isExactCustomDomain) {
-      if (route.rewritePath === url.pathname) {
-        return response;
-      }
-      const rewriteUrl = new URL(route.rewritePath, requestOrigin);
+      const rest = (route.localeExplicit ? pathnames.slice(2) : pathnames.slice(1))
+        .filter(Boolean)
+        .join("/");
+      const rewritePath = `${internalPagePrefix}/${route.locale}${
+        rest ? `/${rest}` : ""
+      }`;
+      const rewriteUrl = new URL(rewritePath, requestOrigin);
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
