@@ -11,7 +11,7 @@ import {
 const PUBLIC_CACHE = 300; // 5 * 60 = 300s = 5m
 const DEV_CACHE = 10 * 60; // 10m
 const REVALIDATE = process.env.NODE_ENV === "development" ? DEV_CACHE : 0;
-const LOCAL_VERSIONLESS_PIPE_NAMES = new Set([
+const LOCAL_VERSIONLESS_PIPE_NAMES: ReadonlySet<string> = new Set([
   "endpoint__audit_log__v1",
   "endpoint__http_list_14d__v1",
   "endpoint__http_list_1d__v1",
