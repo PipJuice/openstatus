@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/cenkalti/backoff/v5"
 	"github.com/google/uuid"
@@ -31,6 +32,14 @@ type TCPPrivateRegionData struct {
 	Timing        string `json:"timing"`
 }
 
+func tcpTimestampOrNow(timestamp int64) int64 {
+	if timestamp > 0 {
+		return timestamp
+	}
+
+	return time.Now().UTC().UnixMilli()
+}
+
 // runAssertions performs all configured assertions for TCP and returns their results
 
 func (jobRunner) TCPJob(ctx context.Context, monitor *v1.TCPMonitor) (*TCPPrivateRegionData, error) {
@@ -53,6 +62,7 @@ func (jobRunner) TCPJob(ctx context.Context, monitor *v1.TCPMonitor) (*TCPPrivat
 	op := func() (*TCPPrivateRegionData, error) {
 		called++
 		res, err := checker.PingTCP(int(monitor.Timeout), monitor.Uri)
+		timestamp := tcpTimestampOrNow(res.TCPStart)
 		if err != nil {
 			if called < int(retry) {
 				return nil, fmt.Errorf("TCP connection failed: %w", err)
@@ -66,8 +76,8 @@ func (jobRunner) TCPJob(ctx context.Context, monitor *v1.TCPMonitor) (*TCPPrivat
 			return &TCPPrivateRegionData{
 				ID:            id.String(),
 				Latency:       0,
-				Timestamp:     res.TCPStart,
-				CronTimestamp: res.TCPStart,
+				Timestamp:     timestamp,
+				CronTimestamp: timestamp,
 				URI:           monitor.Uri,
 				RequestStatus: "error",
 				Error:         1,
@@ -95,8 +105,8 @@ func (jobRunner) TCPJob(ctx context.Context, monitor *v1.TCPMonitor) (*TCPPrivat
 		data := &TCPPrivateRegionData{
 			ID:            id.String(),
 			Latency:       latency,
-			Timestamp:     res.TCPStart,
-			CronTimestamp: res.TCPStart,
+			Timestamp:     timestamp,
+			CronTimestamp: timestamp,
 			URI:           monitor.Uri,
 			RequestStatus: requestStatus,
 			Error:         0,
