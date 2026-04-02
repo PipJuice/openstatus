@@ -60,7 +60,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return params.url;
     },
     async session(params) {
-      return params.session;
+      if (!params.session.user || !params.user) {
+        return params.session;
+      }
+
+      return {
+        ...params.session,
+        user: {
+          ...params.session.user,
+          ...params.user,
+        },
+      };
     },
   },
 });
