@@ -1,8 +1,12 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { auth } from "@/lib/auth";
-import { lambdaRouter } from "@openstatus/api/src/lambda";
-import { createTRPCContext } from "@openstatus/api/src/trpc";
+import { emailRouter } from "@openstatus/api/src/router/email";
+import { createTRPCRouter, createTRPCContext } from "@openstatus/api/src/trpc";
+
+const statusPageLambdaRouter = createTRPCRouter({
+  emailRouter,
+});
 
 // Stripe is incompatible with Edge runtimes due to using Node.js events
 // export const runtime = "edge";
@@ -10,7 +14,7 @@ import { createTRPCContext } from "@openstatus/api/src/trpc";
 const handler = auth((req) =>
   fetchRequestHandler({
     endpoint: "/api/trpc/lambda",
-    router: lambdaRouter,
+    router: statusPageLambdaRouter,
     req,
     createContext: () =>
       createTRPCContext({

@@ -1,15 +1,19 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 import { auth } from "@/lib/auth";
-import { edgeRouter } from "@openstatus/api/src/edge";
-import { createTRPCContext } from "@openstatus/api/src/trpc";
+import { statusPageRouter } from "@openstatus/api/src/router/statusPage";
+import { createTRPCRouter, createTRPCContext } from "@openstatus/api/src/trpc";
+
+const statusPageEdgeRouter = createTRPCRouter({
+  statusPage: statusPageRouter,
+});
 
 export const runtime = "edge";
 
 const handler = auth((req) =>
   fetchRequestHandler({
     endpoint: "/api/trpc/edge",
-    router: edgeRouter,
+    router: statusPageEdgeRouter,
     req,
     createContext: () =>
       createTRPCContext({
