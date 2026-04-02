@@ -218,6 +218,12 @@ func (h Handler) DNSHandlerRegion(c *gin.Context) {
 	ctx := c.Request.Context()
 	dataSourceName := "check_dns_response__v0"
 	const defaultRetry = 3
+	region := c.Param("region")
+
+	if region == "" {
+		c.String(http.StatusBadRequest, "region is required")
+		return
+	}
 
 	// Authorization check
 	if c.GetHeader("Authorization") != fmt.Sprintf("Basic %s", h.Secret) {
