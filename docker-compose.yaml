@@ -190,6 +190,8 @@ services:
       TINYBIRD_URL: ${TINYBIRD_URL:-http://tinybird-local:7181}
       RESEND_API_KEY: ${RESEND_API_KEY:-dummy}
       AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
       SELF_HOST: ${SELF_HOST:-true}
       NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
       CRON_SECRET: ${CRON_SECRET:-dummy}
@@ -247,6 +249,8 @@ services:
       TINYBIRD_URL: ${TINYBIRD_URL:-http://tinybird-local:7181}
       RESEND_API_KEY: ${RESEND_API_KEY:-dummy}
       AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
       SELF_HOST: ${SELF_HOST:-true}
       NEXT_PUBLIC_URL: ${NEXT_PUBLIC_URL}
       CRON_SECRET: ${CRON_SECRET:-dummy}
