@@ -176,6 +176,12 @@ export default auth(async (req) => {
       ? null
       : getValidSubdomain(requestHost);
     if (isExactCustomDomain) {
+      if (
+        url.pathname === `/${_page.slug}` ||
+        url.pathname.startsWith(`/${_page.slug}/`)
+      ) {
+        return response;
+      }
       const internalPath = route.rewritePath.replace(
         `/${route.prefix}`,
         `/${_page.slug}`,
