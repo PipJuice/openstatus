@@ -543,7 +543,7 @@ export class OSTinybird {
         ok: z.number().prefault(0),
         degraded: z.number().prefault(0),
         error: z.number().prefault(0),
-        monitorId: z.string(),
+        monitorId: z.string().prefault(""),
       }),
       opts: { next: { revalidate: REVALIDATE } },
     });

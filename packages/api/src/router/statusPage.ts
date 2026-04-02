@@ -597,6 +597,9 @@ export const statusPageRouter = createTRPCRouter({
         if (statusResult?.data) {
           statusResult.data.forEach((status) => {
             const monitorId = status.monitorId;
+            if (!monitorId) {
+              return;
+            }
             if (!statusDataByMonitorId.has(monitorId)) {
               statusDataByMonitorId.set(monitorId, []);
             }
