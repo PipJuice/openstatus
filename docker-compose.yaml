@@ -66,6 +66,8 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL:-http://libsql:8080}
       DATABASE_AUTH_TOKEN: ${DATABASE_AUTH_TOKEN:-any-token}
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-http://localhost:6379}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-placeholder}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-self-hosted}
       GCP_CLIENT_EMAIL: ${GCP_CLIENT_EMAIL:-dummy@example.com}
       GCP_PRIVATE_KEY: ${GCP_PRIVATE_KEY:-dummy}
