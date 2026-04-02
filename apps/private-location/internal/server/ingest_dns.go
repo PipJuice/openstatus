@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"strconv"
 
 	"connectrpc.com/connect"
@@ -80,6 +81,18 @@ func (h *privateLocationHandler) IngestDNS(ctx context.Context, req *connect.Req
 	}
 
 	h.sendEventAndUpdateLastSeen(ctx, data, tinybird.DatasourceDNS, ic.Region.ID)
+
+	workflowErr := sendWorkflowStatusUpdate(ctx, workflowStatusUpdate{
+		MonitorId:     req.Msg.MonitorId,
+		Status:        mapRequestStatusToWorkflowStatus(req.Msg.RequestStatus),
+		Message:       req.Msg.Message,
+		Region:        strconv.Itoa(ic.Region.ID),
+		CronTimestamp: req.Msg.CronTimestamp,
+		Latency:       req.Msg.Latency,
+	})
+	if workflowErr != nil {
+		slog.ErrorContext(ctx, "failed to update monitor workflow status", "monitor_id", req.Msg.MonitorId, "error", workflowErr)
+	}
 
 	return connect.NewResponse(&private_locationv1.IngestDNSResponse{}), nil
 }

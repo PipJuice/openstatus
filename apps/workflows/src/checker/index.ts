@@ -9,7 +9,6 @@ import {
 } from "@openstatus/db/src/schema/monitors/validation";
 
 import { getLogger } from "@logtape/logtape";
-import { monitorRegions } from "@openstatus/db/src/schema/constants";
 import { env } from "../env";
 import type { Env } from "../index";
 import { checkerAudit } from "../utils/audit-log";
@@ -21,13 +20,52 @@ const payloadSchema = z.object({
   monitorId: z.string(),
   message: z.string().optional(),
   statusCode: z.number().optional(),
-  region: z.enum(monitorRegions),
+  region: z.string().min(1),
   cronTimestamp: z.number(),
   status: monitorStatusSchema,
   latency: z.number().optional(),
 });
 
 const logger = getLogger(["workflow"]);
+
+async function getMonitorTargets(monitorId: number, publicRegions: string[]) {
+  const privateLocations = await db
+    .select({
+      id: schema.privateLocation.id,
+      name: schema.privateLocation.name,
+    })
+    .from(schema.privateLocationToMonitors)
+    .innerJoin(
+      schema.privateLocation,
+      eq(
+        schema.privateLocation.id,
+        schema.privateLocationToMonitors.privateLocationId,
+      ),
+    )
+    .where(
+      and(
+        eq(schema.privateLocationToMonitors.monitorId, monitorId),
+        isNull(schema.privateLocationToMonitors.deletedAt),
+      ),
+    )
+    .all();
+
+  if (privateLocations.length > 0) {
+    const configuredTargets = privateLocations.map((location) =>
+      String(location.id),
+    );
+    const targetLabels = new Map(
+      privateLocations.map((location) => [String(location.id), location.name]),
+    );
+
+    return { configuredTargets, targetLabels };
+  }
+
+  return {
+    configuredTargets: publicRegions,
+    targetLabels: new Map<string, string>(),
+  };
+}
 
 /**
  * Finds an open incident (not resolved and not acknowledged) for the given monitor.
@@ -132,22 +170,31 @@ checkerRoute.post("/updateStatus", async (c) => {
     .get();
 
   const monitor = selectMonitorSchema.parse(currentMonitor);
-  const numberOfRegions = monitor.regions.length;
+  const { configuredTargets, targetLabels } = await getMonitorTargets(
+    monitor.id,
+    monitor.regions,
+  );
+  const numberOfRegions = configuredTargets.length;
 
   // Fetch all affected regions for notifications (single query)
-  const affectedRegions = await db
-    .select({ region: schema.monitorStatusTable.region })
-    .from(schema.monitorStatusTable)
-    .where(
-      and(
-        eq(schema.monitorStatusTable.monitorId, monitor.id),
-        eq(schema.monitorStatusTable.status, status),
-        inArray(schema.monitorStatusTable.region, monitor.regions),
-      ),
-    )
-    .all();
+  const affectedRegions =
+    configuredTargets.length === 0
+      ? []
+      : await db
+          .select({ region: schema.monitorStatusTable.region })
+          .from(schema.monitorStatusTable)
+          .where(
+            and(
+              eq(schema.monitorStatusTable.monitorId, monitor.id),
+              eq(schema.monitorStatusTable.status, status),
+              inArray(schema.monitorStatusTable.region, configuredTargets),
+            ),
+          )
+          .all();
 
-  const affectedRegionsList = affectedRegions.map((r) => r.region);
+  const affectedRegionsList = affectedRegions.map(
+    (regionStatus) => targetLabels.get(regionStatus.region) ?? regionStatus.region,
+  );
   const affectedRegionCount = affectedRegionsList.length;
 
   event.status_update = {
