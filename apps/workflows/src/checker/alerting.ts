@@ -8,7 +8,7 @@ import {
 
 import { getLogger } from "@logtape/logtape";
 import { Effect, Schedule } from "effect";
-import { checkerAudit } from "../utils/audit-log";
+import { publishAuditLogSafely } from "../utils/audit-log";
 import { providerToFunction } from "./utils";
 
 const logger = getLogger("workflow");
@@ -237,7 +237,7 @@ export const triggerNotifications = async ({
         break;
     }
     // ALPHA
-    await checkerAudit.publishAuditLog({
+    await publishAuditLogSafely({
       id: `monitor:${monitorId}`,
       action: "notification.sent",
       targets: [{ id: monitorId, type: "monitor" }],

@@ -11,7 +11,7 @@ import {
 import { getLogger } from "@logtape/logtape";
 import { env } from "../env";
 import type { Env } from "../index";
-import { checkerAudit } from "../utils/audit-log";
+import { publishAuditLogSafely } from "../utils/audit-log";
 import { triggerNotifications, upsertMonitorStatus } from "./alerting";
 
 export const checkerRoute = new Hono<Env>();
@@ -111,7 +111,7 @@ async function resolveIncident(params: {
     .where(eq(incidentTable.id, incident.id))
     .run();
 
-  await checkerAudit.publishAuditLog({
+  await publishAuditLogSafely({
     id: `monitor:${monitorId}`,
     action: "incident.resolved",
     targets: [{ id: monitorId, type: "monitor" }],
@@ -216,7 +216,7 @@ checkerRoute.post("/updateStatus", async (c) => {
 
   switch (status) {
     case "active":
-      await checkerAudit.publishAuditLog({
+      await publishAuditLogSafely({
         id: `monitor:${monitorId}`,
         action: "monitor.recovered",
         targets: [{ id: monitorId, type: "monitor" }],
@@ -229,7 +229,7 @@ checkerRoute.post("/updateStatus", async (c) => {
       });
       break;
     case "degraded":
-      await checkerAudit.publishAuditLog({
+      await publishAuditLogSafely({
         id: `monitor:${monitorId}`,
         action: "monitor.degraded",
         targets: [{ id: monitorId, type: "monitor" }],
@@ -242,7 +242,7 @@ checkerRoute.post("/updateStatus", async (c) => {
       });
       break;
     case "error":
-      await checkerAudit.publishAuditLog({
+      await publishAuditLogSafely({
         id: `monitor:${monitorId}`,
         action: "monitor.failed",
         targets: [{ id: monitorId, type: "monitor" }],
@@ -366,7 +366,7 @@ checkerRoute.post("/updateStatus", async (c) => {
             break;
           }
 
-          await checkerAudit.publishAuditLog({
+          await publishAuditLogSafely({
             id: `monitor:${monitorId}`,
             action: "incident.created",
             targets: [{ id: monitorId, type: "monitor" }],
