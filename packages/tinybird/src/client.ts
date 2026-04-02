@@ -12,6 +12,7 @@ const PUBLIC_CACHE = 300; // 5 * 60 = 300s = 5m
 const DEV_CACHE = 10 * 60; // 10m
 const REVALIDATE = process.env.NODE_ENV === "development" ? DEV_CACHE : 0;
 const LOCAL_VERSIONLESS_PIPE_NAMES: ReadonlySet<string> = new Set([
+  "endpoint__stats_global__v0",
   "endpoint__audit_log__v1",
   "endpoint__http_list_14d__v1",
   "endpoint__http_list_1d__v1",
@@ -26,6 +27,13 @@ const LOCAL_VERSIONLESS_PIPE_NAMES: ReadonlySet<string> = new Set([
   "endpoint__tcp_metrics_14d__v1",
   "endpoint__tcp_metrics_1d__v1",
   "endpoint__tcp_metrics_7d__v1",
+  "endpoint__tcp_metrics_by_interval_14d__v0",
+  "endpoint__tcp_metrics_by_interval_1d__v0",
+  "endpoint__tcp_metrics_by_interval_7d__v0",
+  "endpoint__tcp_metrics_by_region_14d__v0",
+  "endpoint__tcp_metrics_by_region_1d__v0",
+  "endpoint__tcp_metrics_by_region_7d__v0",
+  "endpoint__tcp_metrics_global_1d__v0",
   "endpoint__tcp_status_45d__v1",
 ] as const);
 
