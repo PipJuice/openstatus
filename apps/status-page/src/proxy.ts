@@ -13,7 +13,7 @@ export default auth(async (req) => {
   const response = NextResponse.next();
   const cookies = req.cookies;
   const headers = req.headers;
-  const host = headers.get("x-forwarded-host");
+  const host = headers.get("x-forwarded-host") ?? headers.get("host");
 
   const route = resolveRoute({
     host,

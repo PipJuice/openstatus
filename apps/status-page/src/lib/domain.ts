@@ -47,7 +47,7 @@ export const getValidSubdomain = (host?: string | null) => {
 export const getValidCustomDomain = (req: NextRequest | Request) => {
   const url = "nextUrl" in req ? req.nextUrl.clone() : new URL(req.url);
   const headers = req.headers;
-  const host = headers.get("x-forwarded-host");
+  const host = headers.get("x-forwarded-host") ?? headers.get("host");
 
   let prefix = "";
   let type: "hostname" | "pathname";
