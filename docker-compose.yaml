@@ -148,6 +148,7 @@ services:
     environment:
       DB_URL: ${DATABASE_URL:-http://libsql:8080}
       TINYBIRD_URL: ${TINYBIRD_URL:-http://tinybird-local:7181}
+      TINYBIRD_TOKEN: ${TINYBIRD_TOKEN:-random-local-token}
       GIN_MODE: release
       PORT: "8080"
       OPENSTATUS_INGEST_URL: ${OPENSTATUS_INGEST_URL:-http://server:3000}
