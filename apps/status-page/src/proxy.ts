@@ -170,7 +170,11 @@ export default auth(async (req) => {
 
   if (_page.customDomain && host !== `${_page.slug}.stpg.dev`) {
     const pathnames = url.pathname.split("/");
-    const subdomain = getValidSubdomain(url.host);
+    const requestHost = host ?? url.host;
+    const subdomain =
+      requestHost === _page.customDomain
+        ? null
+        : getValidSubdomain(requestHost);
     if (pathnames.length > 2 && !subdomain) {
       const pathname = pathnames.slice(2).join("/");
       const rewriteUrl = new URL(`/${_page.slug}/${pathname}`, req.url);
