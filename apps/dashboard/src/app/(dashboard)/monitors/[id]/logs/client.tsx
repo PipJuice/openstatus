@@ -27,6 +27,7 @@ import { DataTablePagination } from "@/components/ui/data-table/data-table-pagin
 import { DataTableSkeleton } from "@/components/ui/data-table/data-table-skeleton";
 import { exampleLogs } from "@/data/response-logs";
 import { useTRPC } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@openstatus/api";
 import { useQuery } from "@tanstack/react-query";
 import type { PaginationState } from "@tanstack/react-table";
 import { Lock } from "lucide-react";
@@ -34,6 +35,8 @@ import { useParams } from "next/navigation";
 import { useQueryStates } from "nuqs";
 import { useCallback, useMemo } from "react";
 import { searchParamsParsers } from "./search-params";
+
+type ResponseLog = RouterOutputs["tinybird"]["list"]["data"][number];
 
 export function Client() {
   const trpc = useTRPC();
@@ -114,7 +117,7 @@ export function Client() {
         ) : !enabled ? (
           <BillingPlaceholder />
         ) : (
-          <DataTable
+          <DataTable<ResponseLog, unknown>
             data={_logs?.data ?? []}
             columns={columns}
             onRowClick={(row) => {
@@ -154,7 +157,7 @@ function BillingPlaceholder() {
   const columns = useMemo(() => getColumns([]), []);
   return (
     <BillingOverlayContainer>
-      <DataTable data={exampleLogs} columns={columns} />
+      <DataTable<ResponseLog, unknown> data={exampleLogs} columns={columns} />
       <BillingOverlay>
         <BillingOverlayButton asChild>
           <Link href="/settings/billing">
