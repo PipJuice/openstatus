@@ -634,11 +634,14 @@ export const statusPageRouter = createTRPCRouter({
           // Monitor components with real data: use Tinybird data
           const monitorId = c.monitor?.id.toString() || "";
           const rawData = statusDataByMonitorId.get(monitorId) || [];
-          filledData = fillStatusDataFor45Days(
-            rawData,
-            monitorId,
-            lookbackPeriod,
-          );
+          filledData =
+            rawData.length > 0
+              ? fillStatusDataFor45Days(rawData, monitorId, lookbackPeriod)
+              : fillStatusDataFor45DaysNoop({
+                  errorDays: [],
+                  degradedDays: [],
+                  lookbackPeriod,
+                });
         } else {
           // Static components, manual mode, or NOOP mode: use synthetic data
           filledData = fillStatusDataFor45DaysNoop({
