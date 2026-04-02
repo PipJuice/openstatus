@@ -34,6 +34,10 @@ type TCPPrivateRegionData struct {
 // runAssertions performs all configured assertions for TCP and returns their results
 
 func (jobRunner) TCPJob(ctx context.Context, monitor *v1.TCPMonitor) (*TCPPrivateRegionData, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	retry := monitor.Retry
 	if retry == 0 {
 		retry = 3

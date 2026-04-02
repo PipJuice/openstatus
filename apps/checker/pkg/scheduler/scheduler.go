@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -27,6 +28,14 @@ type MonitorManager struct {
 	JobRunner job.JobRunner
 	Scheduler *tasks.Scheduler
 	mu        sync.Mutex
+}
+
+func taskContextOrBackground(ctx tasks.TaskContext) context.Context {
+	if ctx.Context != nil {
+		return ctx.Context
+	}
+
+	return context.Background()
 }
 
 // UpdateMonitors fetches the latest monitors and starts/stops jobs as needed
@@ -114,14 +123,18 @@ func (mm *MonitorManager) UpdateMonitors(ctx context.Context) {
 				// StartAfter: time.Now().Add(5 * time.Millisecond),
 				RunSingleInstance: true,
 				FuncWithTaskContext: func(ctx tasks.TaskContext) error {
-
 					monitor := m
+					taskCtx := taskContextOrBackground(ctx)
 					log.Printf("Starting TCP job for monitor %s (%s)", monitor.Id, monitor.Uri)
-					data, err := mm.JobRunner.TCPJob(ctx.Context, monitor)
+					data, err := mm.JobRunner.TCPJob(taskCtx, monitor)
 					if err != nil {
 						log.Printf("TCP monitor check failed for %s (%s): %v", monitor.Id, monitor.Uri, err)
+						return err
 					}
-					resp, ingestErr := mm.Client.IngestTCP(ctx.Context, &connect.Request[v1.IngestTCPRequest]{
+					if data == nil {
+						return fmt.Errorf("TCP monitor job returned no data for %s", monitor.Id)
+					}
+					resp, ingestErr := mm.Client.IngestTCP(taskCtx, &connect.Request[v1.IngestTCPRequest]{
 						Msg: &v1.IngestTCPRequest{
 							MonitorId:     monitor.Id,
 							Id:            data.ID,
@@ -165,14 +178,14 @@ func (mm *MonitorManager) UpdateMonitors(ctx context.Context) {
 				// StartAfter: time.Now().Add(5 * time.Millisecond),
 				RunSingleInstance: true,
 				FuncWithTaskContext: func(ctx tasks.TaskContext) error {
-
 					monitor := m
+					taskCtx := taskContextOrBackground(ctx)
 					log.Printf("Starting TCP job for monitor %s (%s)", monitor.Id, monitor.Uri)
-					_, err := mm.JobRunner.DNSJob(ctx.Context, monitor)
+					_, err := mm.JobRunner.DNSJob(taskCtx, monitor)
 					if err != nil {
 						log.Printf("TCP monitor check failed for %s (%s): %v", monitor.Id, monitor.Uri, err)
 					}
-					resp, ingestErr := mm.Client.IngestDNS(ctx.Context, &connect.Request[v1.IngestDNSRequest]{
+					resp, ingestErr := mm.Client.IngestDNS(taskCtx, &connect.Request[v1.IngestDNSRequest]{
 						Msg: &v1.IngestDNSRequest{
 							MonitorId: monitor.Id,
 
