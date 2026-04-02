@@ -11,6 +11,23 @@ import {
 const PUBLIC_CACHE = 300; // 5 * 60 = 300s = 5m
 const DEV_CACHE = 10 * 60; // 10m
 const REVALIDATE = process.env.NODE_ENV === "development" ? DEV_CACHE : 0;
+const LOCAL_VERSIONLESS_PIPE_NAMES = new Set([
+  "endpoint__audit_log__v1",
+  "endpoint__http_list_14d__v1",
+  "endpoint__http_list_1d__v1",
+  "endpoint__http_list_7d__v1",
+  "endpoint__http_metrics_14d__v1",
+  "endpoint__http_metrics_1d__v1",
+  "endpoint__http_metrics_7d__v1",
+  "endpoint__http_status_45d__v1",
+  "endpoint__tcp_list_14d__v1",
+  "endpoint__tcp_list_1d__v1",
+  "endpoint__tcp_list_7d__v1",
+  "endpoint__tcp_metrics_14d__v1",
+  "endpoint__tcp_metrics_1d__v1",
+  "endpoint__tcp_metrics_7d__v1",
+  "endpoint__tcp_status_45d__v1",
+] as const);
 
 export class OSTinybird {
   private readonly tb: Client;
@@ -36,7 +53,10 @@ export class OSTinybird {
   }
 
   private resolvePipeName(pipeName: string) {
-    if (!this.useVersionlessPipeNames) {
+    if (
+      !this.useVersionlessPipeNames ||
+      !LOCAL_VERSIONLESS_PIPE_NAMES.has(pipeName)
+    ) {
       return pipeName;
     }
 
