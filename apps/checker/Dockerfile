@@ -18,7 +18,7 @@ COPY go.* .
 RUN go mod download
 
 COPY . .
-RUN go build -trimpath -ldflags "-s -w" -o checker ./cmd/server/main.go
+RUN go build -trimpath -ldflags "-s -w" -o /go/src/app/openstatus-checker ./cmd/server/main.go
 
 FROM scratch
 
@@ -31,7 +31,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
-COPY --from=builder /go/src/app/checker /opt/bin/checker
+COPY --from=builder /go/src/app/openstatus-checker /opt/bin/checker
 
 ENV TZ=UTC
 ENV USER=1000
