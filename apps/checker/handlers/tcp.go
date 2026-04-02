@@ -46,15 +46,9 @@ func (h Handler) TCPHandler(c *gin.Context) {
 		return
 	}
 
-	if h.CloudProvider == "fly" {
-		// if the request has been routed to a wrong region, we forward it to the correct one.
-		region := c.GetHeader("fly-prefer-region")
-		if region != "" && region != h.Region {
-			c.Header("fly-replay", fmt.Sprintf("region=%s", region))
-			c.String(http.StatusAccepted, "Forwarding request to %s", region)
-
-			return
-		}
+	region, forwarded := h.resolveExecutionRegion(c)
+	if forwarded {
+		return
 	}
 
 	var req request.TCPCheckerRequest
@@ -144,7 +138,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			Timestamp:     res.TCPStart,
 			Error:         0,
 			ErrorMessage:  "",
-			Region:        h.Region,
+			Region:        region,
 			MonitorID:     monitorId,
 			Timing:        string(timingAsString),
 			Latency:       latency,
@@ -161,7 +155,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 				TCPDone:  res.TCPDone,
 			},
 			Latency: latency,
-			Region:  h.Region,
+			Region:  region,
 			JobType: "tcp",
 		}
 
@@ -169,7 +163,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "active",
-				Region:        h.Region,
+				Region:        region,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       latency,
 			})
@@ -180,7 +174,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "active",
-				Region:        h.Region,
+				Region:        region,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       latency,
 			})
@@ -192,7 +186,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "degraded",
-				Region:        h.Region,
+				Region:        region,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       latency,
 			})
@@ -219,7 +213,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			WorkspaceID:   workspaceId,
 			CronTimestamp: req.CronTimestamp,
 			ErrorMessage:  err.Error(),
-			Region:        h.Region,
+			Region:        region,
 			MonitorID:     monitorId,
 			Error:         1,
 			Trigger:       trigger,
@@ -233,7 +227,7 @@ func (h Handler) TCPHandler(c *gin.Context) {
 			MonitorId:     req.MonitorID,
 			Status:        "error",
 			Message:       err.Error(),
-			Region:        h.Region,
+			Region:        region,
 			CronTimestamp: req.CronTimestamp,
 		})
 
@@ -266,7 +260,7 @@ func (h Handler) TCPHandlerRegion(c *gin.Context) {
 		return
 	}
 
-	if h.CloudProvider == "fly" {
+	if h.CloudProvider == "fly" && h.Region != "self-hosted" {
 		// if the request has been routed to a wrong region, we forward it to the correct one.
 		region := c.GetHeader("fly-prefer-region")
 		if region != "" && region != h.Region {
@@ -306,7 +300,7 @@ func (h Handler) TCPHandlerRegion(c *gin.Context) {
 				TCPDone:  res.TCPDone,
 			},
 			Latency: res.TCPDone - res.TCPStart,
-			Region:  h.Region,
+			Region:  region,
 			JobType: "tcp",
 		}
 
@@ -322,7 +316,7 @@ func (h Handler) TCPHandlerRegion(c *gin.Context) {
 			Timestamp:     res.TCPStart,
 			Error:         0,
 			ErrorMessage:  "",
-			Region:        h.Region,
+			Region:        region,
 			Timing:        string(timingAsString),
 			Latency:       latency,
 			RequestId:     req.RequestId,

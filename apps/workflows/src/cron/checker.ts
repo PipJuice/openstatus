@@ -324,7 +324,12 @@ function generateUrl({
   row: z.infer<typeof selectMonitorSchema>;
   region: Region;
 }) {
+  const checkerBaseUrl = env().CHECKER_URL?.replace(/\/$/, "");
   const regionInfo = regionDict[region];
+
+  if (checkerBaseUrl) {
+    return `${checkerBaseUrl}/checker/${row.jobType}?monitor_id=${row.id}`;
+  }
 
   switch (regionInfo.provider) {
     case "fly":

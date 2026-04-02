@@ -24,6 +24,11 @@ import { env } from "../env";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 const ABORT_TIMEOUT = 10000;
+const DEFAULT_CHECKER_URL = "https://openstatus-checker.fly.dev";
+
+const getCheckerBaseUrl = (): string => {
+  return process.env.CHECKER_URL?.replace(/\/$/, "") || DEFAULT_CHECKER_URL;
+};
 
 // Input schemas
 const httpTestInput = z.object({
@@ -159,8 +164,9 @@ export async function testHttp(input: z.infer<typeof httpTestInput>) {
   }
 
   try {
+    const checkerBaseUrl = getCheckerBaseUrl();
     const res = await fetch(
-      `https://openstatus-checker.fly.dev/ping/${input.region}`,
+      `${checkerBaseUrl}/ping/${input.region}`,
       {
         method: "POST",
         headers: {
@@ -251,8 +257,9 @@ export async function testHttp(input: z.infer<typeof httpTestInput>) {
 
 export async function testTcp(input: z.infer<typeof tcpTestInput>) {
   try {
+    const checkerBaseUrl = getCheckerBaseUrl();
     const res = await fetch(
-      `https://openstatus-checker.fly.dev/tcp/${input.region}`,
+      `${checkerBaseUrl}/tcp/${input.region}`,
       {
         method: "POST",
         headers: {
@@ -302,8 +309,9 @@ export async function testTcp(input: z.infer<typeof tcpTestInput>) {
 
 export async function testDns(input: z.infer<typeof dnsTestInput>) {
   try {
+    const checkerBaseUrl = getCheckerBaseUrl();
     const res = await fetch(
-      `https://openstatus-checker.fly.dev/dns/${input.region}`,
+      `${checkerBaseUrl}/dns/${input.region}`,
       {
         method: "POST",
         headers: {
@@ -470,13 +478,14 @@ export async function triggerChecker(
 }
 
 function generateUrl({ row }: { row: z.infer<typeof selectMonitorSchema> }) {
+  const checkerBaseUrl = getCheckerBaseUrl();
   switch (row.jobType) {
     case "http":
-      return `https://openstatus-checker.fly.dev/checker/http?monitor_id=${row.id}`;
+      return `${checkerBaseUrl}/checker/http?monitor_id=${row.id}`;
     case "tcp":
-      return `https://openstatus-checker.fly.dev/checker/tcp?monitor_id=${row.id}`;
+      return `${checkerBaseUrl}/checker/tcp?monitor_id=${row.id}`;
     case "dns":
-      return `https://openstatus-checker.fly.dev/checker/dns?monitor_id=${row.id}`;
+      return `${checkerBaseUrl}/checker/dns?monitor_id=${row.id}`;
     default:
       throw new Error("Invalid jobType");
   }

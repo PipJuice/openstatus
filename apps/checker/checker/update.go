@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -27,6 +28,9 @@ type UpdateData struct {
 }
 
 func UpdateStatus(ctx context.Context, updateData UpdateData) error {
+	if workflowsURL := os.Getenv("WORKFLOWS_URL"); workflowsURL != "" {
+		return updateStatusDirect(ctx, workflowsURL, updateData)
+	}
 
 	url := "https://openstatus-workflows.fly.dev/updateStatus"
 	basic := "Basic " + os.Getenv("CRON_SECRET")
@@ -87,6 +91,38 @@ func UpdateStatus(ctx context.Context, updateData UpdateData) error {
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msg("error while creating the cloud task")
 		return fmt.Errorf("cloudtasks.CreateTask: %w", err)
+	}
+
+	return nil
+}
+
+func updateStatusDirect(ctx context.Context, workflowsURL string, updateData UpdateData) error {
+	url := strings.TrimRight(workflowsURL, "/") + "/updateStatus"
+	payloadBuf := new(bytes.Buffer)
+	if err := json.NewEncoder(payloadBuf).Encode(updateData); err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("error while encoding status update")
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, payloadBuf)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("error while creating status update request")
+		return err
+	}
+
+	req.Header.Set("Authorization", "Basic "+os.Getenv("CRON_SECRET"))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("error while sending status update request")
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Ctx(ctx).Error().Int("status_code", resp.StatusCode).Msg("unexpected status update response")
+		return fmt.Errorf("unexpected status update response: %d", resp.StatusCode)
 	}
 
 	return nil

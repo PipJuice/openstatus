@@ -49,14 +49,9 @@ func (h Handler) DNSHandler(c *gin.Context) {
 		return
 	}
 
-	// Fly region forwarding
-	if h.CloudProvider == "fly" {
-		region := c.GetHeader("fly-prefer-region")
-		if region != "" && region != h.Region {
-			c.Header("fly-replay", fmt.Sprintf("region=%s", region))
-			c.String(http.StatusAccepted, "Forwarding request to %s", region)
-			return
-		}
+	region, forwarded := h.resolveExecutionRegion(c)
+	if forwarded {
+		return
 	}
 
 	// Parse request
@@ -104,7 +99,7 @@ func (h Handler) DNSHandler(c *gin.Context) {
 
 	data := DNSResponse{
 		ID:            id.String(),
-		Region:        h.Region,
+		Region:        region,
 		Trigger:       trigger,
 		URI:           req.URI,
 		WorkspaceID:   workspaceId,
@@ -173,7 +168,7 @@ func (h Handler) DNSHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "error",
-				Region:        h.Region,
+				Region:        region,
 				Message:       err.Error(),
 				CronTimestamp: req.CronTimestamp,
 				Latency:       latency,
@@ -183,7 +178,7 @@ func (h Handler) DNSHandler(c *gin.Context) {
 		checker.UpdateStatus(ctx, checker.UpdateData{
 			MonitorId:     req.MonitorID,
 			Status:        "degraded",
-			Region:        h.Region,
+			Region:        region,
 			CronTimestamp: req.CronTimestamp,
 			Latency:       latency,
 		})
@@ -192,7 +187,7 @@ func (h Handler) DNSHandler(c *gin.Context) {
 		checker.UpdateStatus(ctx, checker.UpdateData{
 			MonitorId:     req.MonitorID,
 			Status:        "active",
-			Region:        h.Region,
+			Region:        region,
 			CronTimestamp: req.CronTimestamp,
 			Latency:       latency,
 		})
@@ -231,7 +226,7 @@ func (h Handler) DNSHandlerRegion(c *gin.Context) {
 	}
 
 	// Fly region forwarding
-	if h.CloudProvider == "fly" {
+	if h.CloudProvider == "fly" && h.Region != "self-hosted" {
 		region := c.GetHeader("fly-prefer-region")
 		if region != "" && region != h.Region {
 			c.Header("fly-replay", fmt.Sprintf("region=%s", region))
@@ -270,7 +265,7 @@ func (h Handler) DNSHandlerRegion(c *gin.Context) {
 
 	data := DNSResponse{
 		ID:            id.String(),
-		Region:        h.Region,
+		Region:        region,
 		URI:           req.URI,
 		WorkspaceID:   int64(workspaceId),
 		CronTimestamp: req.CronTimestamp,

@@ -55,15 +55,9 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 		return
 	}
 
-	if h.CloudProvider == "fly" {
-		// if the request has been routed to a wrong region, we forward it to the correct one.
-		region := c.GetHeader("fly-prefer-region")
-		if region != "" && region != h.Region {
-			c.Header("fly-replay", fmt.Sprintf("region=%s", region))
-			c.String(http.StatusAccepted, "Forwarding request to %s", region)
-
-			return
-		}
+	region, forwarded := h.resolveExecutionRegion(c)
+	if forwarded {
+		return
 	}
 
 	var req request.HttpCheckerRequest
@@ -156,7 +150,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 			Latency:       res.Latency,
 			StatusCode:    res.Status,
 			MonitorID:     req.MonitorID,
-			Region:        h.Region,
+			Region:        region,
 			WorkspaceID:   req.WorkspaceID,
 			Timestamp:     res.Timestamp,
 			CronTimestamp: req.CronTimestamp,
@@ -181,7 +175,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 		}
 
 		result = res
-		result.Region = h.Region
+		result.Region = region
 		result.JobType = "http"
 
 		// it's in error if not successful
@@ -208,7 +202,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 				MonitorId:     req.MonitorID,
 				Status:        "error",
 				StatusCode:    res.Status,
-				Region:        h.Region,
+				Region:        region,
 				Message:       res.Error,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       res.Latency,
@@ -220,7 +214,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "degraded",
-				Region:        h.Region,
+				Region:        region,
 				StatusCode:    res.Status,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       res.Latency,
@@ -232,7 +226,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "active",
-				Region:        h.Region,
+				Region:        region,
 				StatusCode:    res.Status,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       res.Latency,
@@ -244,7 +238,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 			checker.UpdateStatus(ctx, checker.UpdateData{
 				MonitorId:     req.MonitorID,
 				Status:        "active",
-				Region:        h.Region,
+				Region:        region,
 				StatusCode:    res.Status,
 				CronTimestamp: req.CronTimestamp,
 				Latency:       res.Latency,
@@ -284,7 +278,7 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 			ID:            id.String(),
 			URL:           req.URL,
 			Method:        req.Method,
-			Region:        h.Region,
+			Region:        region,
 			Message:       err.Error(),
 			CronTimestamp: req.CronTimestamp,
 			Timestamp:     req.CronTimestamp,
@@ -306,14 +300,14 @@ func (h Handler) HTTPCheckerHandler(c *gin.Context) {
 				MonitorId:     req.MonitorID,
 				Status:        "error",
 				Message:       err.Error(),
-				Region:        h.Region,
+				Region:        region,
 				CronTimestamp: req.CronTimestamp,
 			})
 		}
 	}
 
 	if req.OtelConfig.Endpoint != "" {
-		otelOS.RecordHTTPMetrics(ctx, req, result, h.Region)
+		otelOS.RecordHTTPMetrics(ctx, req, result, region)
 	}
 
 	returnData := c.Query("data")

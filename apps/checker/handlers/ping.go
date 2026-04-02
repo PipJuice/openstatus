@@ -59,7 +59,7 @@ func (h Handler) PingRegionHandler(c *gin.Context) {
 		return
 	}
 
-	if h.CloudProvider == "fly" {
+	if h.CloudProvider == "fly" && h.Region != "self-hosted" {
 		if region != h.Region {
 			c.Header("fly-replay", fmt.Sprintf("region=%s", region))
 			c.String(http.StatusAccepted, "Forwarding request to %s", region)
@@ -131,11 +131,11 @@ func (h Handler) PingRegionHandler(c *gin.Context) {
 			Headers:     string(headersAsString),
 			Timestamp:   r.Timestamp,
 			Timing:      string(timingAsString),
-			Region:      h.Region,
+			Region:      region,
 		}
 
 		res = r
-		res.Region = h.Region
+		res.Region = region
 
 		if tbData.RequestId != 0 {
 			if err := h.TbClient.SendEvent(ctx, tbData, dataSourceName); err != nil {

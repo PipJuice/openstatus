@@ -83,12 +83,47 @@ services:
       SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-dummy}
       AXIOM_TOKEN: ${AXIOM_TOKEN:-dummy}
       AXIOM_DATASET: ${AXIOM_DATASET:-dummy}
+      CHECKER_URL: ${CHECKER_URL:-http://checker:8080}
       PORT: "3000"
     depends_on:
       libsql:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/ping || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  checker:
+    container_name: openstatus-checker
+    build:
+      context: apps/checker
+      dockerfile: Dockerfile
+    image: openstatus/checker:latest
+    networks:
+      - openstatus
+    ports:
+      - "8082:8080"
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-dummy}
+      TINYBIRD_TOKEN: ${TINYBIRD_TOKEN:-dummy}
+      TINYBIRD_URL: ${TINYBIRD_URL:-http://tinybird-local:7181}
+      WORKFLOWS_URL: ${WORKFLOWS_URL:-http://workflows:3000}
+      CLOUD_PROVIDER: ${CLOUD_PROVIDER:-fly}
+      FLY_REGION: ${FLY_REGION:-self-hosted}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AXIOM_TOKEN: ${AXIOM_TOKEN:-dummy}
+      AXIOM_DATASET: ${AXIOM_DATASET:-dummy}
+      PORT: "8080"
+    depends_on:
+      workflows:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -121,6 +156,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-dummy}
       AXIOM_TOKEN: ${AXIOM_TOKEN:-dummy}
       AXIOM_DATASET: ${AXIOM_DATASET:-dummy}
+      CHECKER_URL: ${CHECKER_URL:-http://checker:8080}
       PORT: "3000"
     depends_on:
       workflows:
@@ -213,6 +249,7 @@ services:
       FLY_REGION: ${FLY_REGION:-self-hosted}
       WORKSPACES_LOOKBACK_30: ${WORKSPACES_LOOKBACK_30:-}
       WORKSPACES_HIDE_URL: ${WORKSPACES_HIDE_URL:-}
+      CHECKER_URL: ${CHECKER_URL:-http://checker:8080}
       PORT: "3000"
       HOSTNAME: 0.0.0.0
       AUTH_TRUST_HOST: "true"
@@ -259,6 +296,7 @@ services:
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-dummy}
       UNKEY_API_ID: ${UNKEY_API_ID:-dummy}
       UNKEY_TOKEN: ${UNKEY_TOKEN:-dummy}
+      CHECKER_URL: ${CHECKER_URL:-http://checker:8080}
       PROJECT_ID_VERCEL: ${PROJECT_ID_VERCEL:-dummy}
       TEAM_ID_VERCEL: ${TEAM_ID_VERCEL:-dummy}
       VERCEL_AUTH_BEARER_TOKEN: ${VERCEL_AUTH_BEARER_TOKEN:-dummy}

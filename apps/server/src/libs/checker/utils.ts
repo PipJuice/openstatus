@@ -7,6 +7,12 @@ import {
   transformHeaders,
 } from "@openstatus/utils";
 
+const DEFAULT_CHECKER_URL = "https://openstatus-checker.fly.dev";
+
+const getCheckerBaseUrl = (): string => {
+  return process.env.CHECKER_URL?.replace(/\/$/, "") || DEFAULT_CHECKER_URL;
+};
+
 export function getCheckerPayload(
   monitor: z.infer<typeof selectMonitorSchema>,
   status: z.infer<typeof selectMonitorSchema>["status"],
@@ -72,11 +78,13 @@ export function getCheckerUrl(
     data: false,
   },
 ): string {
+  const checkerBaseUrl = getCheckerBaseUrl();
+
   switch (monitor.jobType) {
     case "http":
-      return `https://openstatus-checker.fly.dev/checker/http?monitor_id=${monitor.id}&trigger=${opts.trigger}&data=${opts.data}`;
+      return `${checkerBaseUrl}/checker/http?monitor_id=${monitor.id}&trigger=${opts.trigger}&data=${opts.data}`;
     case "tcp":
-      return `https://openstatus-checker.fly.dev/checker/tcp?monitor_id=${monitor.id}&trigger=${opts.trigger}&data=${opts.data}`;
+      return `${checkerBaseUrl}/checker/tcp?monitor_id=${monitor.id}&trigger=${opts.trigger}&data=${opts.data}`;
     default:
       throw new OpenStatusApiError({
         code: "BAD_REQUEST",

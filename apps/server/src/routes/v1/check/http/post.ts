@@ -17,6 +17,12 @@ import {
   ResponseSchema,
 } from "./schema";
 
+const DEFAULT_CHECKER_URL = "https://openstatus-checker.fly.dev";
+
+const getCheckerBaseUrl = (): string => {
+  return process.env.CHECKER_URL?.replace(/\/$/, "") || DEFAULT_CHECKER_URL;
+};
+
 const postRoute = createRoute({
   method: "post",
   tags: ["check"],
@@ -65,11 +71,12 @@ export function registerHTTPPostCheck(api: typeof checkApi) {
       .get();
 
     const result = [];
+    const checkerBaseUrl = getCheckerBaseUrl();
 
     for (let count = 0; count < input.runCount; count++) {
       const currentFetch = [];
       for (const region of input.regions) {
-        const r = fetch(`https://openstatus-checker.fly.dev/ping/${region}`, {
+        const r = fetch(`${checkerBaseUrl}/ping/${region}`, {
           headers: {
             Authorization: `Basic ${env.CRON_SECRET}`,
             "Content-Type": "application/json",

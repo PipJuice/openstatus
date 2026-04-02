@@ -22,5 +22,6 @@ export const env = () =>
       SENTRY_DSN: z.string().prefault(""),
       AXIOM_TOKEN: z.string().prefault(""),
       AXIOM_DATASET: z.string().prefault(""),
+      CHECKER_URL: z.string().optional(),
     })
     .parse(process.env);
