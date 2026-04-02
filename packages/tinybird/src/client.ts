@@ -14,8 +14,11 @@ const REVALIDATE = process.env.NODE_ENV === "development" ? DEV_CACHE : 0;
 
 export class OSTinybird {
   private readonly tb: Client;
+  private readonly useVersionlessPipeNames: boolean;
 
   constructor(token: string) {
+    this.useVersionlessPipeNames = Boolean(process.env.TINYBIRD_URL);
+
     if (
       process.env.NODE_ENV === "development" ||
       process.env.NODE_ENV === "test"
@@ -32,8 +35,23 @@ export class OSTinybird {
     }
   }
 
-  public get homeStats() {
+  private resolvePipeName(pipeName: string) {
+    if (!this.useVersionlessPipeNames) {
+      return pipeName;
+    }
+
+    return pipeName.replace(/__v\d+$/, "");
+  }
+
+  private buildPipe(opts: Parameters<Client["buildPipe"]>[0]) {
     return this.tb.buildPipe({
+      ...opts,
+      pipe: this.resolvePipeName(opts.pipe),
+    });
+  }
+
+  public get homeStats() {
+    return this.buildPipe({
       pipe: "endpoint__stats_global__v0",
       parameters: z.object({
         cronTimestamp: z.int().optional(),
@@ -48,7 +66,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpListDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_1d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -70,7 +88,7 @@ export class OSTinybird {
   }
 
   public get httpListDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_1d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -95,7 +113,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpListWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -117,7 +135,7 @@ export class OSTinybird {
   }
 
   public get httpListWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -142,7 +160,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpListBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -164,7 +182,7 @@ export class OSTinybird {
   }
 
   public get httpListBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_list_14d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -189,7 +207,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_1d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -211,7 +229,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_1d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -235,7 +253,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpMetricsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_7d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -257,7 +275,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_7d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -281,7 +299,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpMetricsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_14d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -303,7 +321,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_14d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -327,7 +345,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByIntervalDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_interval_1d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -347,7 +365,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByIntervalWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_interval_7d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -367,7 +385,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByIntervalBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_interval_14d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -387,7 +405,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByRegionDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_region_1d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -408,7 +426,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByRegionWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_region_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -429,7 +447,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsByRegionBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_by_region_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -450,7 +468,7 @@ export class OSTinybird {
   }
 
   public get httpStatusWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_status_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -468,7 +486,7 @@ export class OSTinybird {
   }
 
   public get legacy_httpStatus45d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_status_45d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -491,7 +509,7 @@ export class OSTinybird {
   }
 
   public get httpStatus45d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_status_45d__v1",
       parameters: z.object({
         monitorIds: z.string().array(),
@@ -512,7 +530,7 @@ export class OSTinybird {
   }
 
   public get httpGetBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_get_14d__v0",
       parameters: z.object({
         id: z.string().nullable(),
@@ -544,7 +562,7 @@ export class OSTinybird {
   }
 
   public get httpGetMonthly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_get_30d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -575,7 +593,7 @@ export class OSTinybird {
 
   // FIXME: rename to same convension
   public get getResultForOnDemandCheckHttp() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "get_result_for_on_demand_check_http",
       parameters: z.object({
         monitorId: z.int(),
@@ -603,7 +621,7 @@ export class OSTinybird {
   // TODO: add tcpChartDaily, tcpChartWeekly
 
   public get legacy_tcpListDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_1d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -624,7 +642,7 @@ export class OSTinybird {
   }
 
   public get tcpListDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_1d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -647,7 +665,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpListWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -668,7 +686,7 @@ export class OSTinybird {
   }
 
   public get tcpListWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -691,7 +709,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpListBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -712,7 +730,7 @@ export class OSTinybird {
   }
 
   public get tcpListBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_list_14d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -735,7 +753,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_1d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -757,7 +775,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_1d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -781,7 +799,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpMetricsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_7d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -803,7 +821,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_7d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -827,7 +845,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpMetricsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_14d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -849,7 +867,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_14d__v1",
       parameters: z.object({
         interval: z.int().optional(),
@@ -873,7 +891,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByIntervalDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_interval_1d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -894,7 +912,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByIntervalWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_interval_7d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -915,7 +933,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByIntervalBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_interval_14d__v0",
       parameters: z.object({
         regions: z.array(z.enum(monitorRegions).or(z.string())).optional(),
@@ -936,7 +954,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByRegionDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_region_1d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -957,7 +975,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByRegionWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_region_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -978,7 +996,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsByRegionBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_by_region_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -999,7 +1017,7 @@ export class OSTinybird {
   }
 
   public get tcpStatusWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_status_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1017,7 +1035,7 @@ export class OSTinybird {
   }
 
   public get legacy_tcpStatus45d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_status_45d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1040,7 +1058,7 @@ export class OSTinybird {
   }
 
   public get tcpStatus45d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_status_45d__v1",
       parameters: z.object({
         monitorIds: z.string().array(),
@@ -1062,7 +1080,7 @@ export class OSTinybird {
   }
 
   public get httpWorkspace30d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_workspace_30d__v0",
       parameters: z.object({
         workspaceId: z.string(),
@@ -1078,7 +1096,7 @@ export class OSTinybird {
   }
 
   public get tcpWorkspace30d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_workspace_30d__v0",
       parameters: z.object({
         workspaceId: z.string(),
@@ -1094,7 +1112,7 @@ export class OSTinybird {
   }
 
   public get tcpGetBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_get_14d__v0",
       parameters: z.object({
         id: z.string().nullable(),
@@ -1120,7 +1138,7 @@ export class OSTinybird {
   }
 
   public get tcpGetMonthly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_get_30d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1148,7 +1166,7 @@ export class OSTinybird {
    * NOTE: The Tinybird pipe returns one row per region & interval with latency quantiles.
    */
   public get httpMetricsRegionsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_regions_1d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1170,7 +1188,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsRegionsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_regions_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1191,7 +1209,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsRegionsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_regions_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1212,7 +1230,7 @@ export class OSTinybird {
   }
 
   public get httpUptimeWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_uptime_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1231,7 +1249,7 @@ export class OSTinybird {
   }
 
   public get httpUptime30d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_uptime_30d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1250,7 +1268,7 @@ export class OSTinybird {
   }
 
   public get tcpUptimeWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_uptime_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1269,7 +1287,7 @@ export class OSTinybird {
   }
 
   public get tcpUptime30d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_uptime_30d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1288,7 +1306,7 @@ export class OSTinybird {
   }
 
   public get getAuditLog() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__audit_log__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1312,7 +1330,7 @@ export class OSTinybird {
   }
 
   public get httpGlobalMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_global_1d__v0",
       parameters: z.object({
         monitorIds: z.string().array(),
@@ -1334,7 +1352,7 @@ export class OSTinybird {
   }
 
   public get tcpGlobalMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_global_1d__v0",
       parameters: z.object({
         monitorIds: z.string().array(),
@@ -1356,7 +1374,7 @@ export class OSTinybird {
   }
 
   public get httpTimingPhases14d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_timing_phases_14d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1395,7 +1413,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsLatency1d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_latency_1d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1414,7 +1432,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsLatency7d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_latency_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1433,7 +1451,7 @@ export class OSTinybird {
   }
 
   public get httpMetricsLatency1dMulti() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__http_metrics_latency_1d_multi__v1",
       parameters: z.object({
         monitorIds: z.string().array().min(1),
@@ -1454,7 +1472,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsLatency1d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_latency_1d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1474,7 +1492,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsLatency7d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_latency_7d__v1",
       parameters: z.object({
         monitorId: z.string(),
@@ -1493,7 +1511,7 @@ export class OSTinybird {
   }
 
   public get tcpMetricsLatency1dMulti() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__tcp_metrics_latency_1d_multi__v1",
       parameters: z.object({
         monitorIds: z.string().array().min(1),
@@ -1514,7 +1532,7 @@ export class OSTinybird {
   }
 
   public get dnsGetBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_get_14d__v0",
       parameters: z.object({
         id: z.string().nullable(),
@@ -1552,7 +1570,7 @@ export class OSTinybird {
   }
 
   public get dnsListBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_list_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1587,7 +1605,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsDaily() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_1d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -1611,7 +1629,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsWeekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_7d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -1635,7 +1653,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_14d__v0",
       parameters: z.object({
         interval: z.int().optional(),
@@ -1659,7 +1677,7 @@ export class OSTinybird {
   }
 
   public get dnsUptime30d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_uptime_30d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1678,7 +1696,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsLatency7d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_latency_7d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1697,7 +1715,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsRegionsBiweekly() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_regions_14d__v0",
       parameters: z.object({
         monitorId: z.string(),
@@ -1721,7 +1739,7 @@ export class OSTinybird {
   }
 
   public get dnsStatus45d() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_status_45d__v0",
       parameters: z.object({
         monitorIds: z.string().array(),
@@ -1742,7 +1760,7 @@ export class OSTinybird {
   }
 
   public get dnsMetricsLatency1dMulti() {
-    return this.tb.buildPipe({
+    return this.buildPipe({
       pipe: "endpoint__dns_metrics_latency_1d_multi__v0",
       parameters: z.object({
         monitorIds: z.string().array().min(1),
