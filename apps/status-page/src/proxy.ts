@@ -177,7 +177,8 @@ export default auth(async (req) => {
         : getValidSubdomain(requestHost);
     if (pathnames.length > 2 && !subdomain) {
       const pathname = pathnames.slice(2).join("/");
-      const rewriteUrl = new URL(`/${_page.slug}/${pathname}`, req.url);
+      const rewriteUrl = req.nextUrl.clone();
+      rewriteUrl.pathname = `/${_page.slug}/${pathname}`;
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
@@ -199,7 +200,8 @@ export default auth(async (req) => {
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
-    const rewriteUrl = new URL(`/${_page.slug}`, req.url);
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = `/${_page.slug}`;
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
   }
