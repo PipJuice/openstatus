@@ -14,6 +14,9 @@ export default auth(async (req) => {
   const cookies = req.cookies;
   const headers = req.headers;
   const host = headers.get("x-forwarded-host") ?? headers.get("host");
+  const protocol =
+    headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  const requestOrigin = `${protocol}://${host ?? url.host}`;
 
   const route = resolveRoute({
     host,
@@ -156,7 +159,7 @@ export default auth(async (req) => {
   console.log({ proxy });
 
   if (proxy) {
-    const rewriteUrl = new URL(`/${prefix}${url.pathname}`, req.url);
+    const rewriteUrl = new URL(`/${prefix}${url.pathname}`, requestOrigin);
     // Preserve search params from original request
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
@@ -176,18 +179,10 @@ export default auth(async (req) => {
       ? null
       : getValidSubdomain(requestHost);
     if (isExactCustomDomain) {
-      if (
-        url.pathname === `/${_page.slug}` ||
-        url.pathname.startsWith(`/${_page.slug}/`)
-      ) {
+      if (route.rewritePath === url.pathname) {
         return response;
       }
-      const internalPath = route.rewritePath.replace(
-        `/${route.prefix}`,
-        `/${_page.slug}`,
-      );
-      const rewriteUrl = req.nextUrl.clone();
-      rewriteUrl.pathname = internalPath;
+      const rewriteUrl = new URL(route.rewritePath, requestOrigin);
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
@@ -209,13 +204,12 @@ export default auth(async (req) => {
       rewriteUrl.search = url.search;
       return NextResponse.rewrite(rewriteUrl);
     }
-    const rewriteUrl = req.nextUrl.clone();
-    rewriteUrl.pathname = `/${_page.slug}`;
+    const rewriteUrl = new URL(`/${_page.slug}`, requestOrigin);
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
   }
   if (host?.includes("openstatus.dev")) {
-    const rewriteUrl = new URL(route.rewritePath, req.url);
+    const rewriteUrl = new URL(route.rewritePath, requestOrigin);
     // Preserve search params from original request
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
@@ -224,7 +218,7 @@ export default auth(async (req) => {
   // Rewrite to the resolved path when it differs from the incoming pathname
   // (e.g. hostname routing or pathname routing without a locale segment)
   if (route.rewritePath !== url.pathname) {
-    const rewriteUrl = new URL(route.rewritePath, req.url);
+    const rewriteUrl = new URL(route.rewritePath, requestOrigin);
     rewriteUrl.search = url.search;
     return NextResponse.rewrite(rewriteUrl);
   }
