@@ -2,6 +2,9 @@ networks:
   openstatus:
     driver: bridge
     name: openstatus
+  dokploy-external:
+    external: true
+    name: ${DOKPLOY_NETWORK_NAME:-dokploy-network}
 
 volumes:
   libsql-data:
@@ -206,6 +209,24 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    restart: unless-stopped
+
+  private-probe:
+    container_name: openstatus-private-probe
+    build:
+      context: apps/checker
+      dockerfile: private-location.Dockerfile
+    image: openstatus/private-probe:latest
+    networks:
+      - openstatus
+      - dokploy-external
+    environment:
+      OPENSTATUS_KEY: ${OPENSTATUS_KEY:-}
+      OPENSTATUS_INGEST_URL: ${OPENSTATUS_PROBE_INGEST_URL:-http://private-location:8080}
+      TZ: ${TZ:-UTC}
+    depends_on:
+      private-location:
+        condition: service_healthy
     restart: unless-stopped
 
   dashboard:
