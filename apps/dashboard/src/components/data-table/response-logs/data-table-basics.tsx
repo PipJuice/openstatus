@@ -26,6 +26,36 @@ import { cn } from "@openstatus/ui/lib/utils";
 import { Braces, TableProperties } from "lucide-react";
 
 type ResponseLog = RouterOutputs["tinybird"]["get"]["data"][number];
+type HttpTiming = NonNullable<Extract<ResponseLog, { type: "http" }>["timing"]>;
+
+const getObjectEntries = (
+  value: Record<string, unknown> | null | undefined,
+): Array<[string, unknown]> => {
+  return Object.entries(value ?? {});
+};
+
+const getTimingEntries = (
+  timing: HttpTiming | null | undefined,
+): Array<[string, number]> => {
+  return getObjectEntries(timing).filter(
+    (entry): entry is [string, number] => typeof entry[1] === "number",
+  );
+};
+
+const formatUnknownValue = (value: unknown): string => {
+  if (value == null) {
+    return "-";
+  }
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  return JSON.stringify(value);
+};
 
 export function DataTableBasics({
   data,
@@ -64,9 +94,11 @@ export function DataTableBasicsHTTP({
   const privateLocataion = privateLocations?.find(
     (location) => String(location.id) === String(data.region),
   );
+  const headerEntries = getObjectEntries(data.headers);
   const regionConfig = getRegionInfo(data.region, {
     location: privateLocataion?.name,
   });
+  const timingEntries = getTimingEntries(data.timing);
   return (
     <Table className="table-fixed">
       <colgroup>
@@ -212,7 +244,7 @@ export function DataTableBasicsHTTP({
                         <col className="w-2/3" />
                       </colgroup>
                       <TableBody>
-                        {Object.entries(data?.headers ?? {}).map(
+                        {headerEntries.map(
                           ([key, value]) => (
                             <TableRow
                               key={key}
@@ -222,7 +254,7 @@ export function DataTableBasicsHTTP({
                                 {key}
                               </TableHead>
                               <TableCell className="max-w-full overflow-x-auto whitespace-normal font-mono">
-                                {value}
+                                {formatUnknownValue(value)}
                               </TableCell>
                             </TableRow>
                           ),
@@ -245,7 +277,7 @@ export function DataTableBasicsHTTP({
             <TableRow>
               <TableHead colSpan={2}>Timing</TableHead>
             </TableRow>
-            {Object.entries(data?.timing ?? {}).map(([key, value], index) => (
+            {timingEntries.map(([key, value], index) => (
               <TableRow key={key} className="[&>:not(:last-child)]:border-r">
                 <TableHead className="bg-muted/50 font-normal text-muted-foreground">
                   <span className="uppercase">{key}</span>
@@ -478,6 +510,7 @@ export function DataTableBasicsDNS({
   const privateLocataion = privateLocations?.find(
     (location) => String(location.id) === String(data.region),
   );
+  const recordEntries = getObjectEntries(data.records);
   const regionConfig = getRegionInfo(data.region, {
     location: privateLocataion?.name,
   });
@@ -606,7 +639,7 @@ export function DataTableBasicsDNS({
                         <col className="w-2/3" />
                       </colgroup>
                       <TableBody>
-                        {Object.entries(data?.records ?? {}).map(
+                        {recordEntries.map(
                           ([key, value]) => (
                             <TableRow
                               key={key}
@@ -618,7 +651,7 @@ export function DataTableBasicsDNS({
                               <TableCell className="max-w-full overflow-x-auto whitespace-normal font-mono">
                                 {Array.isArray(value)
                                   ? value.join(", ")
-                                  : value}
+                                  : formatUnknownValue(value)}
                               </TableCell>
                             </TableRow>
                           ),

@@ -23,6 +23,20 @@ const PERCENTILE_MAP = {
   p99: "p99Latency",
 } as const;
 
+type RegionTrendPoint = {
+  latency: number;
+  timestamp: number;
+  [key: string]: number;
+};
+
+type RegionMetricAccumulator = {
+  region: string;
+  p50: number;
+  p90: number;
+  p99: number;
+  trend: RegionTrendPoint[];
+};
+
 // FIXME: rename pipe return values
 
 export function mapMetrics(metrics: RouterOutputs["tinybird"]["metrics"]) {
@@ -120,36 +134,19 @@ export function mapRegionMetrics(
         p50: 0,
         p90: 0,
         p99: 0,
-        trend: [] as {
-          latency: number;
-          timestamp: number;
-          [key: string]: number;
-        }[],
+        trend: [] as RegionTrendPoint[],
       })) ?? []) satisfies RegionMetric[];
 
   type TimelineRow = (typeof timeline.data)[number];
 
-  const map = new Map<
-    string,
-    {
-      region: string;
-      p50: number;
-      p90: number;
-      p99: number;
-      trend: {
-        latency: number;
-        timestamp: number;
-        [key: string]: number;
-      }[];
-    }
-  >();
+  const map = new Map<string, RegionMetricAccumulator>();
 
   (timeline.data as TimelineRow[])
     .filter((row) => regions.includes(row.region))
     .sort((a, b) => a.region.localeCompare(b.region))
     .forEach((row) => {
       const region = row.region;
-      const entry = map.get(region) ?? {
+      const entry: RegionMetricAccumulator = map.get(region) ?? {
         region,
         p50: 0,
         p90: 0,

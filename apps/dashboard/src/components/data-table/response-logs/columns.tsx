@@ -24,6 +24,14 @@ import { Clock, Workflow } from "lucide-react";
 
 type ResponseLog = RouterOutputs["tinybird"]["list"]["data"][number];
 
+const getTimingEntries = (
+  timing: NonNullable<Extract<ResponseLog, { type: "http" }>["timing"]>,
+): Array<[string, number]> => {
+  return Object.entries(timing).filter(
+    (entry): entry is [string, number] => typeof entry[1] === "number",
+  );
+};
+
 // export const columns: ColumnDef<ResponseLog>[] =
 export function getColumns(
   privateLocations: PrivateLocation[],
@@ -176,6 +184,8 @@ function HoverCardTiming({
   timing: NonNullable<Extract<ResponseLog, { type: "http" }>["timing"]>;
   latency: number;
 }) {
+  const timingEntries = getTimingEntries(timing);
+
   return (
     <HoverCard openDelay={50} closeDelay={50}>
       <HoverCardTrigger
@@ -183,7 +193,7 @@ function HoverCardTiming({
         asChild
       >
         <div className="flex">
-          {Object.entries(timing).map(([key, value], index) => (
+          {timingEntries.map(([key, value], index) => (
             <div
               key={key}
               className={cn("h-4")}
@@ -209,9 +219,11 @@ function HoverCardTimingContent({
   timing: NonNullable<Extract<ResponseLog, { type: "http" }>["timing"]>;
   latency: number;
 }) {
+  const timingEntries = getTimingEntries(timing);
+
   return (
     <div className="flex flex-col gap-1">
-      {Object.entries(timing).map(([key, value], index) => {
+      {timingEntries.map(([key, value], index) => {
         return (
           <div key={key} className="grid grid-cols-2 gap-4 text-xs">
             <div className="flex items-center gap-2">
